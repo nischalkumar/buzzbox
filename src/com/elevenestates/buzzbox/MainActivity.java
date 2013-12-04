@@ -6,17 +6,23 @@ import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.provider.PrivacyProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smackx.GroupChatInvitation;
 import org.jivesoftware.smackx.PrivateDataManager;
+import org.jivesoftware.smackx.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.bytestreams.ibb.provider.CloseIQProvider;
 import org.jivesoftware.smackx.bytestreams.ibb.provider.DataPacketProvider;
 import org.jivesoftware.smackx.bytestreams.ibb.provider.OpenIQProvider;
 import org.jivesoftware.smackx.bytestreams.socks5.provider.BytestreamsProvider;
 import org.jivesoftware.smackx.filetransfer.FileTransfer.Status;
+import org.jivesoftware.smackx.filetransfer.FileTransferListener;
 import org.jivesoftware.smackx.filetransfer.FileTransferManager;
+import org.jivesoftware.smackx.filetransfer.FileTransferNegotiator;
+import org.jivesoftware.smackx.filetransfer.FileTransferRequest;
+import org.jivesoftware.smackx.filetransfer.IncomingFileTransfer;
 import org.jivesoftware.smackx.filetransfer.OutgoingFileTransfer;
 import org.jivesoftware.smackx.packet.AttentionExtension;
 import org.jivesoftware.smackx.packet.ChatStateExtension;
@@ -56,19 +62,22 @@ import org.jivesoftware.smackx.pubsub.provider.SubscriptionsProvider;
 import org.jivesoftware.smackx.search.UserSearch;
 
 import android.os.Bundle;
+import android.os.Environment;
 import android.app.Activity;
 import android.util.Log;
 import android.view.Menu;
 
 public class MainActivity extends Activity {
-	public static final String HOST = "talk.google.com";
+	public static final String HOST = "jabber.ccc.de";
+	//public static final String HOST = "talk.google.com";
 	public static final int PORT = 5222;
 	public static final String SERVICE = "gmail.com";
 	public static Chat newChat;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		
-		ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT,SERVICE);
+		//ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT,SERVICE);
+		ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT);
 		//connConfig.setTruststoreType("BKS");
 		XMPPConnection connection = new XMPPConnection(connConfig);
 		//XMPPConnection connection = new XMPPConnection("gmail.com");
@@ -84,7 +93,7 @@ public class MainActivity extends Activity {
 			  connection.connect();
 			  //ping("talk.google.com");
 			  Log.d("connection","connection successfull");
-			  connection.login("xxxxxxxxxxxxxx", "xxxxxxxxxxxxxxxxx");
+			  connection.login("hariom", "holikimasti");
 			// Set the status to available
 	          Presence presence = new Presence(Presence.Type.available);
 	          connection.sendPacket(presence);
@@ -93,20 +102,80 @@ public class MainActivity extends Activity {
 			} catch (XMPPException ex) {
 			  connection = null;
 			  ex.printStackTrace();
-			  Log.d("connection","connection fail");
+			  Log.d("connection","Login fail");
 			  //Unable to connect to server
 			}
+		
 		if(connection!=null)
 		{
-			configureProviderManager();
+			Message msg = new Message("nischal@jabber.ccc.de", Message.Type.chat);  
+	        msg.setBody("mike testing ok");
+	        if (connection != null) {
+	          connection.sendPacket(msg);
+	         
+	        }
+	        
+	        
+	        
+	        configureProviderManager(connection);
+	       
+	        File mf = Environment.getExternalStorageDirectory();
+            File file = new File(mf.getAbsoluteFile()+"/sdcard/DCIM/Camera/ACMICPC2013AsiaAmritapuriSiteOnlineRoundT11014.pdf");
+	        
+	        FileTransferManager manager = new FileTransferManager(connection);
+	        manager.addFileTransferListener(new FileTransferListener() {
+	           public void fileTransferRequest(final FileTransferRequest request) {
+	              new Thread(){
+	                 @Override
+	                 public void run() {
+	                    IncomingFileTransfer transfer = request.accept();
+	                    Log.d("receive","file name: "+transfer.getFileName());
+	                    
+	                    
+	                    File root = android.os.Environment.getExternalStorageDirectory();
+	                    File dir = new File (root.getAbsolutePath() + "/download");
+	                    dir.mkdirs();
+	                    File file = new File(dir+transfer.getFileName());
+	                        try {
+								transfer.recieveFile(file);
+							} catch (XMPPException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+	                        while(!transfer.isDone()) {
+	                           try{
+	                              Thread.sleep(1000L);
+	                           }catch (Exception e) {
+	                              Log.d("receive","thread sleep"+ e.getMessage());
+	                           }
+	                           if(transfer.getStatus().equals(Status.error)) {
+	                              Log.d("error","error status"+ transfer.getError() + "");
+	                           }
+	                           if(transfer.getException() != null) {
+	                              transfer.getException().printStackTrace();
+	                           }
+	                        }
+	                     
+	                 };
+	               }.start();
+	            }
+	         });
+	        
+	        
+	        //sending file
+			/*
+			FileTransferNegotiator.setServiceEnabled(connection, true);
 			FileTransferManager manager = new FileTransferManager(connection);
-			OutgoingFileTransfer transfer = manager.createOutgoingFileTransfer("nischal@jabber.ccc.de/jabber.ccc.de");
+			OutgoingFileTransfer transfer = manager.createOutgoingFileTransfer("hariom@jabber.ccc.de/jabber.ccc.de");
 			File file = new File("/sdcard/DCIM/Camera/1385869353956.jpg");
 			try {
+				Log.d("file sending",file.getAbsolutePath()+" "+file.getName());
+				configureProviderManager(connection);
 			   transfer.sendFile(file, "test_file");
 			} catch (XMPPException e) {
 			   e.printStackTrace();
 			}
+			
 			while(!transfer.isDone()) {
 				   if(transfer.getStatus().equals(Status.error)) {
 				      System.out.println("ERROR!!! " + transfer.getError());
@@ -120,6 +189,7 @@ public class MainActivity extends Activity {
 				      e.printStackTrace();
 				   }
 				}
+				
 				if(transfer.getStatus().equals(Status.refused))
 						 System.out.println("refused  " + transfer.getError());
 				else if( transfer.getStatus().equals(Status.error))
@@ -128,17 +198,17 @@ public class MainActivity extends Activity {
 				   System.out.println(" cancelled  " + transfer.getError());
 				else
 				   System.out.println("Success");
+				   
+				   
+				   */
 			
 		}
+		
+		
 		//}
 		
-		/*
-		Message msg = new Message("nischal1251.11@bitmesra.ac.in", Message.Type.chat);  
-        msg.setBody("mike testing ok");
-        if (connection != null) {
-          connection.sendPacket(msg);
-         
-        }
+		
+		
        	/*
 		Cursor c = getBaseContext().getContentResolver().query(Data.CONTENT_URI,
 	            new String[] {Data._ID, Data.DISPLAY_NAME,Phone.NUMBER, Data.CONTACT_ID,Phone.TYPE, Phone.LABEL},
@@ -164,11 +234,38 @@ public class MainActivity extends Activity {
 	}
 
 	
-	public void configureProviderManager() {
+	public void configureProviderManager(XMPPConnection connection) {
+		
+		
+		ProviderManager.getInstance().addIQProvider("query","http://jabber.org/protocol/bytestreams", new BytestreamsProvider());
+		ProviderManager.getInstance().addIQProvider("query","http://jabber.org/protocol/disco#items", new DiscoverItemsProvider());
+		ProviderManager.getInstance().addIQProvider("query","http://jabber.org/protocol/disco#info", new DiscoverInfoProvider());
+		
+		
+
+        ProviderManager.getInstance().addIQProvider("query",
+                "http://jabber.org/protocol/bytestreams",
+                new BytestreamsProvider());
+        ProviderManager.getInstance().addIQProvider("query",
+                "http://jabber.org/protocol/disco#items",
+                new DiscoverItemsProvider());
+        ProviderManager.getInstance().addIQProvider("query",
+                "http://jabber.org/protocol/disco#info",
+                new DiscoverInfoProvider());
+
+        ServiceDiscoveryManager sdm = ServiceDiscoveryManager.getInstanceFor(connection);
+        if (sdm == null)
+            sdm = new ServiceDiscoveryManager(connection);
+
+        sdm.addFeature("http://jabber.org/protocol/disco#info");
+        sdm.addFeature("http://jabber.org/protocol/disco#item");
+        sdm.addFeature("jabber:iq:privacy");
+		
+		
 	    ProviderManager pm = ProviderManager.getInstance();
 
 	    // The order is the same as in the smack.providers file
-
+	    
 	    //  Private Data Storage
 	    pm.addIQProvider("query","jabber:iq:private", new PrivateDataManager.PrivateDataIQProvider());
 	    //  Time
@@ -275,6 +372,18 @@ public class MainActivity extends Activity {
 
 	    // Attention
 	    pm.addExtensionProvider("attention", "urn:xmpp:attention:0", new AttentionExtension.Provider());
+	    
+	    //input
+	    pm.addIQProvider("si", "http://jabber.org/protocol/si",
+	            new StreamInitiationProvider());
+	    pm.addIQProvider("query", "http://jabber.org/protocol/bytestreams",
+	            new BytestreamsProvider());
+	    pm.addIQProvider("open", "http://jabber.org/protocol/ibb",
+	            new OpenIQProvider());
+	    pm.addIQProvider("close", "http://jabber.org/protocol/ibb",
+	            new CloseIQProvider());
+	    pm.addExtensionProvider("data", "http://jabber.org/protocol/ibb",
+	            new DataPacketProvider());
 
 	}
 	
