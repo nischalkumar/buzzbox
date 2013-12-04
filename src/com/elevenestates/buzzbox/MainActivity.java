@@ -84,7 +84,7 @@ public class MainActivity extends Activity {
 			  connection.connect();
 			  //ping("talk.google.com");
 			  Log.d("connection","connection successfull");
-			  connection.login("nischalhacks@gmail.com", "nokiaisbest");
+			  connection.login("xxxxxxxxxxxxxx", "xxxxxxxxxxxxxxxxx");
 			// Set the status to available
 	          Presence presence = new Presence(Presence.Type.available);
 	          connection.sendPacket(presence);
