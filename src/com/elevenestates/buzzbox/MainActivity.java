@@ -3,6 +3,7 @@ package com.elevenestates.buzzbox;
 import java.io.File;
 
 import org.jivesoftware.smack.Chat;
+import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -64,8 +65,12 @@ import org.jivesoftware.smackx.search.UserSearch;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
+import android.content.Intent;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
 	public static final String HOST = "jabber.ccc.de";
@@ -73,13 +78,16 @@ public class MainActivity extends Activity {
 	public static final int PORT = 5222;
 	public static final String SERVICE = "gmail.com";
 	public static Chat newChat;
+	XMPPConnection connection;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		
+		Connection.DEBUG_ENABLED=true;
 		//ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT,SERVICE);
 		ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT);
 		//connConfig.setTruststoreType("BKS");
-		XMPPConnection connection = new XMPPConnection(connConfig);
+		connection = new XMPPConnection(connConfig);
 		//XMPPConnection connection = new XMPPConnection("gmail.com");
 		 
 		
@@ -93,7 +101,7 @@ public class MainActivity extends Activity {
 			  connection.connect();
 			  //ping("talk.google.com");
 			  Log.d("connection","connection successfull");
-			  connection.login("hariom", "holikimasti");
+			  connection.login("nischal", "holikimasti");
 			// Set the status to available
 	          Presence presence = new Presence(Presence.Type.available);
 	          connection.sendPacket(presence);
@@ -108,6 +116,8 @@ public class MainActivity extends Activity {
 		
 		if(connection!=null)
 		{
+			
+			/*
 			Message msg = new Message("nischal@jabber.ccc.de", Message.Type.chat);  
 	        msg.setBody("mike testing ok");
 	        if (connection != null) {
@@ -115,12 +125,12 @@ public class MainActivity extends Activity {
 	         
 	        }
 	        
-	        
+	        */
 	        
 	        configureProviderManager(connection);
 	       
-	        File mf = Environment.getExternalStorageDirectory();
-            File file = new File(mf.getAbsoluteFile()+"/sdcard/DCIM/Camera/ACMICPC2013AsiaAmritapuriSiteOnlineRoundT11014.pdf");
+	        //File mf = Environment.getExternalStorageDirectory();
+            //File file = new File(mf.getAbsoluteFile()+"/sdcard/DCIM/Camera/ACMICPC2013AsiaAmritapuriSiteOnlineRoundT11014.pdf");
 	        
 	        FileTransferManager manager = new FileTransferManager(connection);
 	        manager.addFileTransferListener(new FileTransferListener() {
@@ -140,18 +150,21 @@ public class MainActivity extends Activity {
 								transfer.recieveFile(file);
 							} catch (XMPPException e1) {
 								// TODO Auto-generated catch block
-								e1.printStackTrace();
+								
 							}
 	                        while(!transfer.isDone()) {
 	                           try{
 	                              Thread.sleep(1000L);
 	                           }catch (Exception e) {
 	                              Log.d("receive","thread sleep"+ e.getMessage());
+	                              
 	                           }
 	                           if(transfer.getStatus().equals(Status.error)) {
+	                        	   
 	                              Log.d("error","error status"+ transfer.getError() + "");
 	                           }
 	                           if(transfer.getException() != null) {
+	                        	   
 	                              transfer.getException().printStackTrace();
 	                           }
 	                        }
@@ -162,47 +175,32 @@ public class MainActivity extends Activity {
 	         });
 	        
 	        
-	        //sending file
-			/*
-			FileTransferNegotiator.setServiceEnabled(connection, true);
-			FileTransferManager manager = new FileTransferManager(connection);
-			OutgoingFileTransfer transfer = manager.createOutgoingFileTransfer("hariom@jabber.ccc.de/jabber.ccc.de");
-			File file = new File("/sdcard/DCIM/Camera/1385869353956.jpg");
-			try {
-				Log.d("file sending",file.getAbsolutePath()+" "+file.getName());
-				configureProviderManager(connection);
-			   transfer.sendFile(file, "test_file");
-			} catch (XMPPException e) {
-			   e.printStackTrace();
-			}
-			
-			while(!transfer.isDone()) {
-				   if(transfer.getStatus().equals(Status.error)) {
-				      System.out.println("ERROR!!! " + transfer.getError());
-				   } else if (transfer.getStatus().equals(Status.cancelled)
-				                    || transfer.getStatus().equals(Status.refused)) {
-				      System.out.println("Cancelled!!! " + transfer.getError());
-				   }
-				   try {
-				      Thread.sleep(1000L);
-				   } catch (InterruptedException e) {
-				      e.printStackTrace();
-				   }
-				}
+	        Button but=(Button)findViewById(R.id.button);
+	        but.setOnClickListener(new View.OnClickListener() {
 				
-				if(transfer.getStatus().equals(Status.refused))
-						 System.out.println("refused  " + transfer.getError());
-				else if( transfer.getStatus().equals(Status.error))
-					 System.out.println(" error " + transfer.getError());
-				else if(transfer.getStatus().equals(Status.cancelled))
-				   System.out.println(" cancelled  " + transfer.getError());
-				else
-				   System.out.println("Success");
-				   
-				   
-				   */
-			
-		}
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					
+						send();
+						
+				}
+			});
+	        
+	        Button msgbut=(Button)findViewById(R.id.message);
+			msgbut.setOnClickListener(new View.OnClickListener() {
+				
+				@Override
+				public void onClick(View arg0) {
+					// TODO Auto-generated method stub
+					msgsend();
+				}
+			});
+		
+		
+		
+		
+	}
 		
 		
 		//}
@@ -232,6 +230,60 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
+
+	public void msgsend()
+	{
+		Message msg = new Message("hariom@jabber.ccc.de", Message.Type.chat);  
+        msg.setBody("mike testing ok");
+        if (connection != null) {
+          connection.sendPacket(msg);
+         
+        }
+	}
+	public void send()
+	{
+		
+		configureProviderManager(connection);
+		FileTransferNegotiator.IBB_ONLY = true;
+		FileTransferNegotiator.setServiceEnabled(connection, true);
+		FileTransferManager manager = new FileTransferManager(connection);
+		//OutgoingFileTransfer transfer = manager.createOutgoingFileTransfer("hariom@jabber.ccc.de/Smack");
+		String to = connection.getRoster().getPresence("hariom@jabber.ccc.de").getFrom();
+		OutgoingFileTransfer transfer = manager.createOutgoingFileTransfer(to);
+		
+		
+		File file = new File("/sdcard/DCIM/Camera/1385869353956.jpg");
+		try {
+			Log.d("file sending",file.getAbsolutePath()+" "+file.getName());
+			configureProviderManager(connection);
+		   transfer.sendFile(file, "test_file");
+		} catch (XMPPException e) {
+		   e.printStackTrace();
+		}
+		
+		while(!transfer.isDone()) {
+			Log.d("status", transfer.getStatus().toString());
+            Log.d("percent", new Long(transfer.getBytesSent()).toString());
+            if (transfer.getStatus() == Status.error) {
+                Log.e("percent", "Error " + new Long(transfer.getBytesSent()).toString() + " " + transfer.getError() + " " + transfer.getException());
+                transfer.cancel();
+                
+			}
+			
+			if(transfer.getStatus().equals(Status.refused))
+					 System.out.println("refused  " + transfer.getError());
+			else if( transfer.getStatus().equals(Status.error))
+				 System.out.println(" error " + transfer.getError());
+			else if(transfer.getStatus().equals(Status.cancelled))
+			   System.out.println(" cancelled  " + transfer.getError());
+			else
+			   System.out.println("Success");
+			   
+
+		
+		}
+	}
+
 
 	
 	public void configureProviderManager(XMPPConnection connection) {
