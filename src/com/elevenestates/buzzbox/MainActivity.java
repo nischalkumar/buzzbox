@@ -64,13 +64,18 @@ import org.jivesoftware.smackx.search.UserSearch;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 	public static final String HOST = "jabber.ccc.de";
@@ -79,20 +84,27 @@ public class MainActivity extends Activity {
 	public static final String SERVICE = "gmail.com";
 	public static Chat newChat;
 	XMPPConnection connection;
-	
+	private Services mBoundService;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		
-		Connection.DEBUG_ENABLED=true;
+		/*
+		//Connection.DEBUG_ENABLED=true;
 		//ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT,SERVICE);
 		ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT);
 		//connConfig.setTruststoreType("BKS");
 		connection = new XMPPConnection(connConfig);
 		//XMPPConnection connection = new XMPPConnection("gmail.com");
-		 
-		
+		 */
+		Context context=getApplicationContext();
+		Intent service = new Intent(context, Services.class);
+		context.startService(service);
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		
+		/*
 		//while(connection==null)
 		//{
 		try {
@@ -125,7 +137,7 @@ public class MainActivity extends Activity {
 	         
 	        }
 	        
-	        */
+	        
 	        
 	        configureProviderManager(connection);
 	       
@@ -202,7 +214,7 @@ public class MainActivity extends Activity {
 		
 	}
 		
-		
+	*/	
 		//}
 		
 		
@@ -231,6 +243,49 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
+	@Override
+	  protected void onResume() {
+	    super.onResume();
+	    bindService(new Intent(this, Services.class), mConnection,
+	        Context.BIND_AUTO_CREATE);
+	  }
+
+	  @Override
+	  protected void onPause() {
+	    super.onPause();
+	    unbindService(mConnection);
+	  }
+
+		private ServiceConnection mConnection = new ServiceConnection() {
+		    public void onServiceConnected(ComponentName className, IBinder service) {
+		        // This is called when the connection with the service has been
+		        // established, giving us the service object we can use to
+		        // interact with the service.  Because we have bound to a explicit
+		        // service that we know is running in our own process, we can
+		        // cast its IBinder to a concrete class and directly access it.
+		        mBoundService = ((Services.LocalBinder)service).getService();
+
+		        // Tell the user about this for our demo.
+		        //Toast.makeText(Binding.this, R.string.local_service_connected,
+		          //      Toast.LENGTH_SHORT).show();
+		    }
+		    
+		    public void onServiceDisconnected(ComponentName className) {
+		        // This is called when the connection with the service has been
+		        // unexpectedly disconnected -- that is, its process crashed.
+		        // Because it is running in our same process, we should never
+		        // see this happen.
+		        mBoundService = null;
+		        //Toast.makeText(Binding.this, R.string.local_service_disconnected,
+		         //       Toast.LENGTH_SHORT).show();
+		    }
+
+			
+		};
+
+		
+
+	
 	public void msgsend()
 	{
 		Message msg = new Message("hariom@jabber.ccc.de", Message.Type.chat);  
