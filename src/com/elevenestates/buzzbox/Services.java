@@ -86,7 +86,7 @@ public class Services extends Service{
 	private final IBinder mBinder = new LocalBinder();
 	private NotificationManager mNM;
 	private int NOTIFICATION = 1;
-	private static final long REPEAT_TIME = 1000 * 300;
+	private static final long REPEAT_TIME = 1000 * 60;
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -113,17 +113,24 @@ public class Services extends Service{
         //Log.i("Services", "Received start id " + startId + ": " + intent);
         // We want this service to continue running until it is explicitly
         // stopped, so return sticky.
-		/*
-        Calendar cal = Calendar.getInstance();
+		
+        AlarmManager service = (AlarmManager) getApplicationContext()
+		        .getSystemService(Context.ALARM_SERVICE);
+		    Intent i = new Intent(getApplicationContext(), Services.class);
+		    PendingIntent pending = PendingIntent.getBroadcast(getApplicationContext(), 0, i,
+		        PendingIntent.FLAG_CANCEL_CURRENT);
+		    Calendar cal = Calendar.getInstance();
+		    // start 30 seconds after boot completed
+		    cal.add(Calendar.SECOND, 30);
+		    // fetch every 30 seconds
+		    // InexactRepeating allows Android to optimize the energy consumption
+		    service.setInexactRepeating(AlarmManager.RTC_WAKEUP,
+		        cal.getTimeInMillis(), REPEAT_TIME, pending);
 
-        Intent intent1 = new Intent(this, Services.class);
-        PendingIntent pintent = PendingIntent.getService(this, 0, intent1, 0);
-
-        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        // Start every 30 seconds
-        alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), REPEAT_TIME, pintent);
-        */
-        if(connection==null||!connection.isConnected())
+		    // service.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(),
+		    // REPEAT_TIME, pending);
+        
+       // if(connection==null||!connection.isConnected())
         	login();
         return START_STICKY;
     }
@@ -143,7 +150,8 @@ public class Services extends Service{
 		@Override
 		public void onReceive(Context arg0, Intent arg1) {
 			// TODO Auto-generated method stub
-			if(connection==null||!connection.isConnected())
+			Log.d("Buzzbox","relogin receiver recies");
+			//if(connection==null||!connection.isConnected())
 				login();
 		}
 		
@@ -179,8 +187,7 @@ public class Services extends Service{
 				//Config.ConfirmationSynObj.notify();
 				
 		try {
-			if(connection==null)
-			{
+			
 				Log.d("Buzzbox","connection null,redifining");
 				
 				ConnectionConfiguration connConfig = new ConnectionConfiguration(HOST,PORT);
@@ -188,9 +195,8 @@ public class Services extends Service{
 				connection = new XMPPConnection(connConfig);
 				connection = new XMPPConnection(connConfig);
 				  connection.connect();
-			}
-			if(connection!=null)
-			{
+			
+			
 			  //Connect to the server
 			
 			  //ping("talk.google.com");
@@ -293,14 +299,7 @@ public class Services extends Service{
 				  login();
 			  }
 			    
-			}else
-			  {
-				  connection=null;
-				  Log.d("Buzzbox","could not connect waiting for 5 min");
-				  Thread.sleep(REPEAT_TIME);
-				  
-				  login();
-			  }
+			
 			} catch (Exception ex) {
 			  connection = null;
 			  

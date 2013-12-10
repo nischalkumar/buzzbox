@@ -11,7 +11,7 @@ import android.content.Intent;
 public class StartServiceReceiver extends BroadcastReceiver{
 
 	// restart service every 30 seconds
-	  private static final long REPEAT_TIME = 1000 * 300;
+	  private static final long REPEAT_TIME = 1000 * 60;
 	  
 	@Override
 	public void onReceive(Context context, Intent arg1) {
